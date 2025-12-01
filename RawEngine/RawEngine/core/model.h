@@ -8,7 +8,7 @@
 namespace core {
     class Model {
     private:
-        // TODO: a Model has a reference to its Material
+        // TODO: a Model has a reference to its Material HELLO :)
         // TODO: create Material class, which contains a reference to a shader ID, and uniform properties
         std::vector<core::Mesh> meshes;
         glm::mat4 modelMatrix;
