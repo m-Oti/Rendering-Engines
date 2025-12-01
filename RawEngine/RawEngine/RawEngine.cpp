@@ -210,8 +210,7 @@ int main() {
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
     GLint lightDirectionUniform = glGetUniformLocation(modelShaderProgram, "lightDirection");
-    GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrix");
-
+    GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrixUniform");
 
     // Scene starting point (TODO: make class. Also maybe make GameObject class)
     std::vector<core::Model*> scene1; // pointers? copies? references?
@@ -265,7 +264,7 @@ int main() {
         // Projection matrix    v
         //  screen space / homogeneous space (...more or less)
         
-        glUniform3f(lightDirectionUniform, 1, 0, 0);
+        glUniform3f(lightDirectionUniform, 0, 1, 0);
         for (int i = 0; i < scene1.size(); i++) {
             // TODO: change uniforms (=material properties) and possibly shader per model
             core::Model* obj = scene1[i];
