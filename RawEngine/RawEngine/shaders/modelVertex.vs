@@ -9,7 +9,7 @@ out vec3 fNor;
 out vec2 uv;
 
 void main() {
-  fPos = aPos;
+  fPos = vec3(mMatrixUniform * vec4(aPos, 1));
   fNor = normalize(vec3(mMatrixUniform * vec4(aNor, 0))); // modelMatrix * aNor TODO: transform to world space
   uv = aUv;
   gl_Position = mvpMatrix * vec4(aPos, 1.0);

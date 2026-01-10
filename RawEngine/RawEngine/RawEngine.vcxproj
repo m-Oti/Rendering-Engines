@@ -136,6 +136,7 @@
     <ClCompile Include="RawEngine.cpp" />
     <ClCompile Include="Scene1.cpp" />
     <ClCompile Include="SceneMainMenu.cpp" />
+    <ClCompile Include="SceneManager.cpp" />
     <ClCompile Include="Student.cpp" />
     <ClCompile Include="Test.cpp" />
   </ItemGroup>
@@ -148,6 +149,7 @@
     <ClInclude Include="core\vertex.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Scene.h" />
+    <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Student.h" />
     <ClInclude Include="Test.h" />
   </ItemGroup>

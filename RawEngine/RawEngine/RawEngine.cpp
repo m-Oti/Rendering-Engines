@@ -9,6 +9,8 @@
 #include "core/assimpLoader.h"
 #include "core/texture.h"
 #include "Camera.h"
+#include "Scene.h"
+#include "SceneManager.h"
 
 //#define MAC_CLION
 #define VSTUDIO
@@ -164,6 +166,14 @@ int main() {
 
     int success;
     Camera cam;
+    SceneManager sceneManager;
+    Scene scene_1("scene_1");
+    Scene scene_2("scene_2");
+
+    bool s_1_active = false;
+    //scene1.AddObj(&suzanne);
+    //sceneManager.scenes. = 
+    
     char infoLog[512];
     const unsigned int modelShaderProgram = glCreateProgram();
     glAttachShader(modelShaderProgram, modelVertexShader);
@@ -194,7 +204,21 @@ int main() {
     quadModel.scale(glm::vec3(5, 5, 1));
 
     core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+    core::Model couch = core::AssimpLoader::loadModel("models/Couch_Small1.fbx");
+    core::Model table = core::AssimpLoader::loadModel("models/model.obj");
+
+    //auto suzanne = std::make_shared<core::Model>(
+      //  core::AssimpLoader::loadModel("models/nonormalmonkey.obj"));
+    //auto couch = std::make_shared<core::Model>(
+      //  core::AssimpLoader::loadModel("models/Couch_Small1.fbx"));
+    //auto table = std::make_shared<core::Model>(
+      //  core::AssimpLoader::loadModel("models/model.obj"));
+      
+    //core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
     core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
+    core::Texture leatherTexture("textures/leather.png");
+    core::Texture furTexture("textures/fur.png");
+    core::Texture woodTexture("textures/wood.png");
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
@@ -211,12 +235,26 @@ int main() {
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
     GLint lightDirectionUniform = glGetUniformLocation(modelShaderProgram, "lightDirection");
     GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrixUniform");
+    GLint objectColor = glGetUniformLocation(modelShaderProgram, "objectColor");
+    GLint lightColor = glGetUniformLocation(modelShaderProgram, "lightColor");
+    GLint ambientIntensity = glGetUniformLocation(modelShaderProgram, "ambientIntensity");
+    GLint ambientLightColor = glGetUniformLocation(modelShaderProgram, "ambientLightColor");
+    GLint lightPos = glGetUniformLocation(modelShaderProgram, "lightPos");
+    GLint camPos = glGetUniformLocation(modelShaderProgram, "camPos");
+    GLint specularColor = glGetUniformLocation(modelShaderProgram, "specularColor");
+    GLint shininess = glGetUniformLocation(modelShaderProgram, "shininess");
+    GLint adsUvGridTexUniform = glGetUniformLocation(modelShaderProgram, "uvGridTexture");
 
     // Scene starting point (TODO: make class. Also maybe make GameObject class)
-    std::vector<core::Model*> scene1; // pointers? copies? references?
-    scene1.push_back(&suzanne); 
+    //std::vector<core::Model*> scene1; // pointers? copies? references?
+     
     // Here's where you add more stuff to your scene
 
+    
+
+    scene_1.AddObj(&couch);
+    scene_1.AddObj(&table);
+    scene_2.AddObj(&suzanne);
 
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
@@ -264,15 +302,31 @@ int main() {
         // Projection matrix    v
         //  screen space / homogeneous space (...more or less)
         
-        glUniform3f(lightDirectionUniform, 0, 1, 0);
-        for (int i = 0; i < scene1.size(); i++) {
+        glUniform3f(lightDirectionUniform, 1, 0, 0);
+        glUniform4f(objectColor, 1.0f, 1.0f, 1.0f, 1);
+        glUniform4f(lightColor, 255.0f / 255.0f, 166.0f / 255.0f, 248.0f / 255.0f, 0.2f);
+        glUniform1f(ambientIntensity, 0.59f);
+        glUniform4f(ambientLightColor, 0.84f, 0.1f, 0.72f, 0.2f);
+        glUniform3f(camPos, cam.getPosition().x, cam.getPosition().y, cam.getPosition().z);
+        glUniform3f(lightPos, 4, 0 ,0);
+        glUniform1f(shininess, 0.5f);
+        glUniform4f(specularColor, 0.59f, 0.34f, 0.45f, 0.2f);
+
+        /*for (int i = 0; i < scene1.size(); i++) {
             // TODO: change uniforms (=material properties) and possibly shader per model
             core::Model* obj = scene1[i];
             glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (*obj).getModelMatrix()));
             // TODO: just pass the model matrix as well
             glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr((*obj).getModelMatrix()));
             obj->render();
-        }
+        }*/
+
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (couch).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((couch).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (suzanne).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((suzanne).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (table).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((table).getModelMatrix()));
         
         glBindVertexArray(0);
 
@@ -285,6 +339,51 @@ int main() {
         quadModel.render();
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
+
+        
+
+        
+
+        if ((glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS))
+            s_1_active = true;
+        else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
+            s_1_active = false;
+
+        if (s_1_active)
+        {
+            glUseProgram(modelShaderProgram);
+            glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * couch.getModelMatrix()));
+            glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(couch.getModelMatrix()));
+            glActiveTexture(GL_TEXTURE1);
+            glBindTexture(GL_TEXTURE_2D, leatherTexture.getId());
+            glUniform1i(adsUvGridTexUniform, 0);
+            
+            scene_1.renderScene(
+                modelShaderProgram,
+                view,
+                projection,
+                mvpMatrixUniform,
+                mMatrixUniform
+            );
+        }
+        else
+        {
+            glUseProgram(modelShaderProgram);
+            glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
+            glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, furTexture.getId());
+            glUniform1i(adsUvGridTexUniform, 0);
+
+            scene_2.renderScene(
+                modelShaderProgram,
+                view,
+                projection,
+                mvpMatrixUniform,
+                mMatrixUniform
+            );
+        }
+        
 
 
         ImGui::Render();
