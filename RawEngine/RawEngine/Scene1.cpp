@@ -19,6 +19,7 @@ void Scene::renderScene(
 )
 {
     glUseProgram(shader);
+    // TODO: What about all those other properties like tint? It should be possible that Game objects have different tint... Or a different texture...
 
     for (auto* model : objs)
     {

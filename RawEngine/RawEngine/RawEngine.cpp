@@ -163,14 +163,18 @@ int main() {
     const GLuint vertexShader = generateShader("shaders/vertex.vs", GL_VERTEX_SHADER);
     const GLuint fragmentShader = generateShader("shaders/fragment.fs", GL_FRAGMENT_SHADER);
     const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
-
+    const GLuint framebufferShader = generateShader("shaders/framebuffer.fs", GL_FRAGMENT_SHADER);
+    const GLuint framebufferVertexShader = generateShader("shaders/framebuffer.vs", GL_VERTEX_SHADER);
+    //const GLuint framebufferShader2 = generateShader("shaders/framebuffer2.fs", GL_FRAGMENT_SHADER);
+    //const GLuint framebufferVertexShader2 = generateShader("shaders/framebuffer2.vs", GL_VERTEX_SHADER);
+    // TODO: load the postprocessing shaders, create a shader program
     int success;
     Camera cam;
     SceneManager sceneManager;
     Scene scene_1("scene_1");
     Scene scene_2("scene_2");
 
-    bool s_1_active = false;
+    bool s_1_active = true;
     //scene1.AddObj(&suzanne);
     //sceneManager.scenes. = 
     
@@ -194,18 +198,116 @@ int main() {
         printf("Error! Making Shader Program: %s\n", infoLog);
     }
 
+    const unsigned int framebufferShaderProgram = glCreateProgram();
+    glAttachShader(framebufferShaderProgram, framebufferVertexShader);
+    glAttachShader(framebufferShaderProgram, framebufferShader);
+    glLinkProgram(framebufferShaderProgram);
+    glGetProgramiv(framebufferShaderProgram, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(framebufferShaderProgram, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }
+
+    /*const unsigned int framebufferShaderProgram2 = glCreateProgram();
+    glAttachShader(framebufferShaderProgram2, framebufferVertexShader2);
+    glAttachShader(framebufferShaderProgram2, framebufferShader2);
+    glLinkProgram(framebufferShaderProgram2);
+    glGetProgramiv(framebufferShaderProgram2, GL_LINK_STATUS, &success);
+    if (!success) {
+        glGetProgramInfoLog(framebufferShaderProgram2, 512, NULL, infoLog);
+        printf("Error! Making Shader Program: %s\n", infoLog);
+    }*/
+
     glDeleteShader(modelVertexShader);
     glDeleteShader(fragmentShader);
     glDeleteShader(textureShader);
+    glDeleteShader(framebufferShader);
+    //glDeleteShader(framebufferShader2);
 
+    //FRAMEBUFFERS
+
+    unsigned int framebuffer;
+    glGenFramebuffers(1, &framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+    unsigned int textureColourbuffer;
+    glGenTextures(1, &textureColourbuffer);
+    glBindTexture(GL_TEXTURE_2D, textureColourbuffer);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourbuffer, 0);
+
+    GLuint RGB;
+    glGenRenderbuffers(1, &RGB);
+    glBindRenderbuffer(GL_RENDER, RGB);
+
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RGB);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //framebuffer 2
+
+    //unsigned int framebuffer2;
+    //glGenFramebuffers(1, &framebuffer2);
+    //glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+
+    //unsigned int textureColourbuffer2;
+    //glGenTextures(1, &textureColourbuffer2);
+    //glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
+
+    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    //glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    //glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourbuffer2, 0);
+
+    ////GLuint RGB;
+    //glGenRenderbuffers(1, &RGB);
+    //glBindRenderbuffer(GL_RENDER, RGB);
+
+    //glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
+    //glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RGB);
+
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    //end framebuffers
+
+    core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
+    
+    std::shared_ptr<core::Texture> furTexture = std::make_shared<core::Texture>("textures/fur.png");
+    std::shared_ptr<core::Texture> woodTexture = std::make_shared<core::Texture>("textures/wood.png");
+    std::shared_ptr<core::Texture> leatherTexture = std::make_shared<core::Texture>("textures/leather.png");
+    
     core::Mesh quad = core::Mesh::generateQuad();
     core::Model quadModel({ quad });
     quadModel.translate(glm::vec3(0, 0, -2.5));
     quadModel.scale(glm::vec3(5, 5, 1));
 
+    core::Model postprocessingQuad({core::Mesh::generateQuad()});
+
     core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+    Material suzanne_mat(modelShaderProgram, glm::vec3(1.0,0.0,0.0), 40);
+    suzanne.SetMaterial(suzanne_mat);
+    suzanne.material.SetTexture(furTexture);
+
     core::Model couch = core::AssimpLoader::loadModel("models/Couch_Small1.fbx");
+    Material couch_mat(modelShaderProgram, glm::vec3(0.0, 1.0, 0.0), 20);
+    couch.SetMaterial(couch_mat);
+    couch.material.SetTexture(leatherTexture);
+
     core::Model table = core::AssimpLoader::loadModel("models/model.obj");
+    Material table_mat(modelShaderProgram, glm::vec3(0.0, 0.0, 1.0), 80);
+    table.SetMaterial(table_mat);
+    table.material.SetTexture(woodTexture);
+
+    couch.rotate(vec3(1, 0, 0), 225);
+    couch.translate(vec3(-2, 0, 0));
+    table.translate(vec3(2, 0, 0));
+    
 
     //auto suzanne = std::make_shared<core::Model>(
       //  core::AssimpLoader::loadModel("models/nonormalmonkey.obj"));
@@ -215,10 +317,7 @@ int main() {
       //  core::AssimpLoader::loadModel("models/model.obj"));
       
     //core::Model suzanne = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
-    core::Texture cmgtGatoTexture("textures/CMGaTo_crop.png");
-    core::Texture leatherTexture("textures/leather.png");
-    core::Texture furTexture("textures/fur.png");
-    core::Texture woodTexture("textures/wood.png");
+    
 
     glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
     glClearColor(clearColor.r,
@@ -233,6 +332,8 @@ int main() {
     GLint mvpMatrixUniform = glGetUniformLocation(modelShaderProgram, "mvpMatrix");
     GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
     GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
+    GLint ppTextureUniform = glGetUniformLocation(framebufferShaderProgram, "textureUniform");
+    GLint ppTextureUniform2 = glGetUniformLocation(framebufferShaderProgram, "textureUniform"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!
     GLint lightDirectionUniform = glGetUniformLocation(modelShaderProgram, "lightDirection");
     GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrixUniform");
     GLint objectColor = glGetUniformLocation(modelShaderProgram, "objectColor");
@@ -243,7 +344,7 @@ int main() {
     GLint camPos = glGetUniformLocation(modelShaderProgram, "camPos");
     GLint specularColor = glGetUniformLocation(modelShaderProgram, "specularColor");
     GLint shininess = glGetUniformLocation(modelShaderProgram, "shininess");
-    GLint adsUvGridTexUniform = glGetUniformLocation(modelShaderProgram, "uvGridTexture");
+    GLint adsUvGridTexUniform = glGetUniformLocation(modelShaderProgram, "uvGridText");
 
     // Scene starting point (TODO: make class. Also maybe make GameObject class)
     //std::vector<core::Model*> scene1; // pointers? copies? references?
@@ -256,12 +357,26 @@ int main() {
     scene_1.AddObj(&table);
     scene_2.AddObj(&suzanne);
 
+
+
     double currentTime = glfwGetTime();
     double finishFrameTime = 0.0;
     float deltaTime = 0.0f;
     float rotationStrength = 100.0f;
+    
+    
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
     while (!glfwWindowShouldClose(window)) {
+        // why does this break your renderer?:
+        glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        glClearColor(0.1, 0.1, 0.1, 0.1);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        /*glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+        glClearColor(0.1, 0.1, 0.1, 0.1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);*/
+        
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
@@ -304,13 +419,13 @@ int main() {
         
         glUniform3f(lightDirectionUniform, 1, 0, 0);
         glUniform4f(objectColor, 1.0f, 1.0f, 1.0f, 1);
-        glUniform4f(lightColor, 255.0f / 255.0f, 166.0f / 255.0f, 248.0f / 255.0f, 0.2f);
+        glUniform4f(lightColor, 255.0f / 255.0f, 166.0f / 255.0f, 248.0f / 255.0f, 0.2f); // 4th coord is irrelevant...
         glUniform1f(ambientIntensity, 0.59f);
-        glUniform4f(ambientLightColor, 0.84f, 0.1f, 0.72f, 0.2f);
+        glUniform4f(ambientLightColor, 0.84f, 0.7f, 0.72f, 0.2f);
         glUniform3f(camPos, cam.getPosition().x, cam.getPosition().y, cam.getPosition().z);
         glUniform3f(lightPos, 4, 0 ,0);
         glUniform1f(shininess, 0.5f);
-        glUniform4f(specularColor, 0.59f, 0.34f, 0.45f, 0.2f);
+        glUniform4f(specularColor, 0.39f, 0.34f, 0.45f, 0.2f);
 
         /*for (int i = 0; i < scene1.size(); i++) {
             // TODO: change uniforms (=material properties) and possibly shader per model
@@ -321,15 +436,16 @@ int main() {
             obj->render();
         }*/
 
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (couch).getModelMatrix()));
+        /*glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (couch).getModelMatrix()));
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((couch).getModelMatrix()));
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (suzanne).getModelMatrix()));
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((suzanne).getModelMatrix()));
         glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * (table).getModelMatrix()));
-        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((table).getModelMatrix()));
+        glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr((table).getModelMatrix()));*/
         
         glBindVertexArray(0);
 
+        
 
         glUseProgram(textureShaderProgram);
         glUniformMatrix4fv(textureModelUniform, 1, GL_FALSE, glm::value_ptr(projection * view * quadModel.getModelMatrix()));
@@ -340,6 +456,7 @@ int main() {
         glBindVertexArray(0);
         glActiveTexture(GL_TEXTURE0);
 
+        
         
 
         
@@ -352,11 +469,11 @@ int main() {
         if (s_1_active)
         {
             glUseProgram(modelShaderProgram);
-            glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * couch.getModelMatrix()));
-            glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(couch.getModelMatrix()));
+            //glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * scene_1.objs[1]->getModelMatrix()));
+            //glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(scene_1.objs[0]->getModelMatrix()));
             glActiveTexture(GL_TEXTURE1);
-            glBindTexture(GL_TEXTURE_2D, leatherTexture.getId());
-            glUniform1i(adsUvGridTexUniform, 0);
+            glBindTexture(GL_TEXTURE_2D, couch.material.texture->getId());
+            glUniform1i(adsUvGridTexUniform, 1);
             
             scene_1.renderScene(
                 modelShaderProgram,
@@ -369,10 +486,10 @@ int main() {
         else
         {
             glUseProgram(modelShaderProgram);
-            glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * suzanne.getModelMatrix()));
-            glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(suzanne.getModelMatrix()));
+            //glUniformMatrix4fv(mvpMatrixUniform, 1, GL_FALSE, glm::value_ptr(projection * view * scene_2.objs[0]->getModelMatrix()));
+            //glUniformMatrix4fv(mMatrixUniform, 1, GL_FALSE, glm::value_ptr(scene_2.objs[0]->getModelMatrix()));
             glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, furTexture.getId());
+            glBindTexture(GL_TEXTURE_2D, suzanne.material.texture->getId());
             glUniform1i(adsUvGridTexUniform, 0);
 
             scene_2.renderScene(
@@ -384,7 +501,23 @@ int main() {
             );
         }
         
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        glUseProgram(framebufferShaderProgram);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureColourbuffer);
+        glUniform1i(ppTextureUniform, 0);
+        postprocessingQuad.render();
+
+        //glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        /*glUseProgram(framebufferShaderProgram2);
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
+        glUniform1i(ppTextureUniform2, 0);
+        postprocessingQuad.render();*/
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

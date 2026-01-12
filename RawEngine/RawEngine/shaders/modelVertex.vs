@@ -11,6 +11,8 @@ out vec2 uv;
 void main() {
   fPos = vec3(mMatrixUniform * vec4(aPos, 1));
   fNor = normalize(vec3(mMatrixUniform * vec4(aNor, 0))); // modelMatrix * aNor TODO: transform to world space
-  uv = aUv;
+  uv = aUv; // note: couch doesnt have UVs...
+  // test UVs: just model space coords:
+  //uv = aPos.xy;
   gl_Position = mvpMatrix * vec4(aPos, 1.0);
 }

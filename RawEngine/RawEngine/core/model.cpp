@@ -3,14 +3,29 @@
 
 namespace core {
 
-    Model::Model(const core::Model& other) : modelMatrix(1) {
+    Model::Model(const core::Model& other) : modelMatrix(1), material(other.GetMaterial()) {
         //TODO the fun stuff
+        this->meshes = other.meshes;
+        this->modelMatrix = other.modelMatrix;
+        printf("Copy ctor is being called");
     }
 
     void Model::render() {
+
+        material.apply();
         for (int i = 0; i < meshes.size(); ++i) {
             meshes[i].render();
         }
+    }
+
+    Material Model::GetMaterial() const
+    {
+        return material;
+    }
+
+    void Model::SetMaterial(Material material)
+    {
+        this->material = material;
     }
 
     void Model::translate(glm::vec3 translation) {

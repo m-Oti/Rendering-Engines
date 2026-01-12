@@ -133,6 +133,7 @@
     <ClCompile Include="core\model.cpp" />
     <ClCompile Include="core\texture.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="RawEngine.cpp" />
     <ClCompile Include="Scene1.cpp" />
     <ClCompile Include="SceneMainMenu.cpp" />
@@ -148,6 +149,7 @@
     <ClInclude Include="core\texture.h" />
     <ClInclude Include="core\vertex.h" />
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="Material.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Student.h" />
