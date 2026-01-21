@@ -58,6 +58,13 @@ void Camera::moveRight(float howMuch) {
     cameraTarget += cameraRight * howMuch;
 }
 
+void Camera::moveUp(float howMuch)
+{
+    calculateVectors();
+    cameraPos += cameraUp * howMuch;
+    cameraTarget += cameraRight * howMuch;
+}
+
 vec3 Camera::getForward()
 {
     return glm::normalize(cameraTarget - cameraPos);

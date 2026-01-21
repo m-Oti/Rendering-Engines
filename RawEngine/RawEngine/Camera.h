@@ -27,6 +27,7 @@ public:
     // getPosition()
     void calculateVectors();
     void moveRight(float howMuch);
+    void moveUp(float howMuch);
     vec3 getPosition();
     void translate(glm::vec3 translation);
     void rotate(glm::vec3 axis, float radians);
