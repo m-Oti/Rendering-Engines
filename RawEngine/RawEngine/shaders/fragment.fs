@@ -42,8 +42,10 @@ void main()
     float s = max(dot(reflectedLight, distance), 0);
     vec4 specular = pow(s, shininess) * specularColor * vec4 (0.1f, 0.1f, 1, 1);
     //specular.a = 1.0;
+    //vec3 constDist = (0.234 + 0.153 * distance + 0.747 * distance * distance);
+    //float attenuation = diffuseLight/(0.234 + 0.153 * distance + 0.747 * distance * distance);
 
-    FragColor = (diffuseLight + ambient + specular) * vec4(textColor.rgb + tint, 1.0);
+    FragColor = (diffuseLight + ambient + specular) + vec4(textColor.rgb + tint, 1.0);
     FragColor.a=1;
     //FragColor = specular;
     //FragColor = vec4(pow(s, shininess), pow(s, shininess), pow(s, shininess), 1);

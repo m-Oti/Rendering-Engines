@@ -166,8 +166,8 @@ int main() {
 	const GLuint textureShader = generateShader("shaders/texture.fs", GL_FRAGMENT_SHADER);
 	const GLuint framebufferShader = generateShader("shaders/framebuffer.fs", GL_FRAGMENT_SHADER);
 	const GLuint framebufferVertexShader = generateShader("shaders/framebuffer.vs", GL_VERTEX_SHADER);
-	const GLuint framebufferShader2 = generateShader("shaders/framebuffer2.fs", GL_FRAGMENT_SHADER);
 	const GLuint framebufferVertexShader2 = generateShader("shaders/framebuffer2.vs", GL_VERTEX_SHADER);
+	const GLuint framebufferShader2 = generateShader("shaders/framebuffer2.fs", GL_FRAGMENT_SHADER);
 	// TODO: load the postprocessing shaders, create a shader program
 	int success;
 	Camera cam;
@@ -335,7 +335,10 @@ int main() {
 	GLint textureModelUniform = glGetUniformLocation(textureShaderProgram, "mvpMatrix");
 	GLint textureUniform = glGetUniformLocation(textureShaderProgram, "text");
 	GLint ppTextureUniform = glGetUniformLocation(framebufferShaderProgram, "textureUniform");
-	GLint ppTextureUniform2 = glGetUniformLocation(framebufferShaderProgram2, "textureUniform2"); //!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	GLint ppTextureUniform2 = glGetUniformLocation(framebufferShaderProgram2, "textureUniform2");
+	GLint brightnessLocation = glGetUniformLocation(framebufferShaderProgram2, "brightness");
+	GLint contrastLocation = glGetUniformLocation(framebufferShaderProgram2, "contrast");
+	GLint hueLocation = glGetUniformLocation(framebufferShaderProgram2, "hue");
 	GLint lightDirectionUniform = glGetUniformLocation(modelShaderProgram, "lightDirection");
 	GLint mMatrixUniform = glGetUniformLocation(modelShaderProgram, "mMatrixUniform");
 	GLint objectColor = glGetUniformLocation(modelShaderProgram, "objectColor");
@@ -347,7 +350,7 @@ int main() {
 	GLint specularColor = glGetUniformLocation(modelShaderProgram, "specularColor");
 	GLint shininess = glGetUniformLocation(modelShaderProgram, "shininess");
 	GLint adsUvGridTexUniform = glGetUniformLocation(modelShaderProgram, "uvGridText");
-	GLint framebuffer_is_active = glGetUniformLocation(framebufferShaderProgram, "framebuffer_is_active");
+	//GLint framebuffer_is_active = glGetUniformLocation(framebufferShaderProgram, "framebuffer_is_active");
 
 	// Scene starting point (TODO: make class. Also maybe make GameObject class)
 	//std::vector<core::Model*> scene1; // pointers? copies? references?
@@ -366,6 +369,11 @@ int main() {
 	double finishFrameTime = 0.0;
 	float deltaTime = 0.0f;
 	float rotationStrength = 100.0f;
+	bool framebuffer_is_active = true;
+	bool framebuffer2_is_active = false;
+	float contrast = 1.0f;
+	float brightness = 1.0f;
+	float hue = 1.0f;
 
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -378,7 +386,7 @@ int main() {
 			glClearColor(0.1, 0.1, 0.1, 0.1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
-		else
+		else if(framebuffer2_is_active)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
 			glClearColor(0.1, 0.1, 0.1, 0.1);
@@ -390,11 +398,17 @@ int main() {
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Raw Engine v2");
+		ImGui::SliderFloat("Brightness", &brightness, -1.0f, 1.0f);
+		ImGui::SliderFloat("Contrast", &contrast, -1.0f, 1.0f);
+		ImGui::SliderFloat("Hue", &hue, 0.0f, 360.0f);
 
-		if (ImGui::Button("Change Framebuffer")) {
+		if (ImGui::Button("Kernel Framebuffer")) {
 			printf("I was clicked!\n");
 			framebuffer_is_active = !framebuffer_is_active;
 			printf("%d\n", framebuffer_is_active);
+		}
+		if (ImGui::Button("Grey Framebuffer")) {
+			framebuffer2_is_active = !framebuffer2_is_active;
 		}
 		ImGui::Text("Hello :)");
 		ImGui::End();
@@ -467,10 +481,6 @@ int main() {
 		glActiveTexture(GL_TEXTURE0);
 
 
-
-
-
-
 		if ((glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS))
 			s_1_active = true;
 		else if (glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS)
@@ -522,7 +532,7 @@ int main() {
 			glUniform1i(ppTextureUniform, 0);
 			postprocessingQuad.render();
 		}
-		else
+		else if(framebuffer2_is_active)
 		{
 			glBindFramebuffer(GL_FRAMEBUFFER, 0);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -531,6 +541,9 @@ int main() {
 			glActiveTexture(GL_TEXTURE0);
 			glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
 			glUniform1i(ppTextureUniform2, 0);
+			glUniform1f(brightnessLocation, brightness);
+			glUniform1f(contrastLocation, contrast);
+			glUniform1f(hueLocation, hue);
 			postprocessingQuad2.render();
 		}
 
