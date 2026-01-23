@@ -19,7 +19,7 @@ Camera::Camera()
 }
 
 void Camera::calculateVectors() {
-    cameraFront = glm::normalize(cameraPos - cameraTarget);
+    //cameraFront = glm::normalize(cameraPos - cameraTarget);
     cameraUp = glm::vec3(0, 1, 0);
     cameraRight = glm::normalize(glm::cross(cameraUp, cameraFront));
     cameraUp = glm::normalize(glm::cross(cameraFront, cameraRight));
@@ -28,6 +28,58 @@ void Camera::calculateVectors() {
 vec3 Camera::getPosition()
 {
     return cameraPos;
+}
+void Camera::rotationMouse(GLFWwindow *window)
+{
+    
+    if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        if (!rotating) {
+            rotating = true;
+            lastX = xpos;
+            lastY = ypos;
+            return;
+        }
+
+        double xoffset = xpos - lastX;
+        double yoffset = lastY - ypos;
+        lastX = xpos;
+        lastY = ypos;
+
+        //scale down the movement
+        float sensitivity = 0.2f;
+        xoffset *= sensitivity;
+        yoffset *= sensitivity;
+
+        //left/right
+        yRotation -= (float)xoffset;
+        //up/down
+        xRotation += (float)yoffset;
+
+        //prevents from flipping upside down
+        if (xRotation > 89.0f) {
+            xRotation = 89.0f;
+        }
+        if (xRotation < -89.0f) {
+            xRotation = -89.0f;
+        }
+        
+        printf("pitch: %f heading: %f\n", xRotation, yRotation);
+        // TODO: deg -> radians, properly
+        cameraFront = 
+            -glm::vec3(sin(yRotation / 20), -sin(xRotation / 20), cos(xRotation / 20) * cos(yRotation / 20));
+            //glm::vec3 (0, -sin(xRotation/20), cos(xRotation/20)); // just pitch
+                
+            //glm::vec3 (sin(yRotation/200), 0, cos(yRotation/200)); // just heading
+        printf("Forward: (%f,%f,%f)\n", cameraFront.x, cameraFront.y, cameraFront.z);
+
+        //rotate(cameraUp, glm::radians(yRotation));
+        //rotate(cameraRight, glm::radians(xRotation));
+        calculateVectors();
+    }
+    else rotating = false;
 }
 void Camera ::translate(glm::vec3 translation)
 {
@@ -38,12 +90,16 @@ void Camera ::translate(glm::vec3 translation)
 }
 void Camera::rotate(glm::vec3 axis, float radians)
 {
-    glm::vec3 currentPos = getPosition();
+    cameraFront = glm::normalize(glm::rotate(cameraFront, radians, axis));
+    cameraRight = glm::normalize(glm::cross(cameraFront, up));
+    cameraUp = glm::normalize(glm::cross(cameraRight, cameraFront));
+
+    
+    /*glm::vec3 currentPos = getPosition();
     cameraPos = cameraInitialPos;
     cameraPos = glm::rotate(cameraPos, radians, axis);
     cameraTarget = glm::rotate(cameraTarget, radians, axis);
-    cameraPos = currentPos;
-
+    cameraPos = currentPos;*/
 }
 
 void Camera::moveForward(float howMuch) {
@@ -62,7 +118,8 @@ void Camera::moveUp(float howMuch)
 {
     calculateVectors();
     cameraPos += cameraUp * howMuch;
-    cameraTarget += cameraRight * howMuch;
+    cameraTarget += cameraUp * howMuch;
+
 }
 
 vec3 Camera::getForward()

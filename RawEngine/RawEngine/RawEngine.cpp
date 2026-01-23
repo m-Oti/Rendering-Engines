@@ -66,14 +66,16 @@ void checkMovement(GLFWwindow* window, Camera& cam)
 		cam.moveUp(0.01f);
 	else if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) cam.moveUp(-0.01f);
 
-	if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
+	cam.rotationMouse(window);
+
+	/*if (glfwGetKey(window, GLFW_KEY_Z) == GLFW_PRESS)
 	{
 		cam.rotate(glm::vec3(0, 1, 0), 0.001f);
 	}
 	else if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS)
 	{
-		cam.rotate(glm::vec3(0, 1, 0), -0.001f);
-	}
+		cam.rotate(glm::vec3(0, 1, 0), -0.001f);*/
+	//}
 
 	//cam.translate(glm::vec3 (x,y,z));
 	//if (x != 0 || y != 0 || z != 0) 
@@ -154,6 +156,7 @@ int main() {
 	ImGui_ImplOpenGL3_Init("#version 400");
 
 	glEnable(GL_DEPTH_TEST);
+
 	glFrontFace(GL_CCW);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -241,39 +244,59 @@ int main() {
 
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourbuffer, 0);
 
-	GLuint RGB;
-	glGenRenderbuffers(1, &RGB);
-	glBindRenderbuffer(GL_RENDER, RGB);
+	// option1:
+	unsigned int depthColorbuffer;
+	glGenTextures(1, &depthColorbuffer);
+	glBindTexture(GL_TEXTURE_2D, depthColorbuffer);
 
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RGB);
+	glTexImage2D(
+		GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, 800, 600, 0,
+		GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL
+	);
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, depthColorbuffer, 0);
 
-	//framebuffer 2
+	// option2: -- what's wrong?
+	//GLuint depthBuffer;
+	//glGenRenderbuffers(1, &depthBuffer);
+	//glBindRenderbuffer(GL_RENDER, depthBuffer);
 
-	unsigned int framebuffer2;
-	glGenFramebuffers(1, &framebuffer2);
-	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, g_width, g_height);
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
-	unsigned int textureColourbuffer2;
-	glGenTextures(1, &textureColourbuffer2);
-	glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourbuffer2, 0);
-
-	///GLuint RGB;
-	glGenRenderbuffers(1, &RGB);
-	glBindRenderbuffer(GL_RENDER, RGB);
-
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, RGB);
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE) {
+		printf("executing victory dance!\n");
+	}
+	else {
+		printf("Something is wrong: %d\n", glCheckFramebufferStatus(GL_FRAMEBUFFER));
+	}
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//framebuffer 2 -> we're not using any of this
+
+	//unsigned int framebuffer2;
+	//glGenFramebuffers(1, &framebuffer2);
+	//glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+
+	//unsigned int textureColourbuffer2;
+	//glGenTextures(1, &textureColourbuffer2);
+	//glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
+
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, g_width, g_height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	//glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, textureColourbuffer2, 0);
+
+	//glGenRenderbuffers(1, &depthBuffer);
+	//glBindRenderbuffer(GL_RENDER, depthBuffer);
+
+	//glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, g_width, g_height);
+	//glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
+
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	//end framebuffers
 
@@ -369,26 +392,41 @@ int main() {
 	double finishFrameTime = 0.0;
 	float deltaTime = 0.0f;
 	float rotationStrength = 100.0f;
+
 	bool framebuffer_is_active = true;
-	bool framebuffer2_is_active = false;
+	int postProcessingEffect = 0; // 0=edge detect, 1=brightness etc.
+	
+	//bool framebuffer2_is_active = false;
 	float contrast = 1.0f;
-	float brightness = 1.0f;
+	float brightness = 0.15f; // TODO: tweak shader such that these values make sense....
 	float hue = 1.0f;
 
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
 
 	while (!glfwWindowShouldClose(window)) {
 		// why does this break your renderer?:
 		if (framebuffer_is_active)
 		{
+			//printf("Using frame buffer 1\n");
 			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 			glClearColor(0.1, 0.1, 0.1, 0.1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		}
-		else if(framebuffer2_is_active)
+			//framebuffer2_is_active = false;
+		//}
+		//else if//(framebuffer2_is_active)
+		//{
+		//	printf("Using frame buffer 2\n");
+		//	framebuffer_is_active = 
+		//	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+		//	glClearColor(0.1, 0.1, 0.1, 0.1);
+		//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		} else
 		{
-			glBindFramebuffer(GL_FRAMEBUFFER, framebuffer2);
+			//printf("Using no frame buffer\n");
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to screen 
 			glClearColor(0.1, 0.1, 0.1, 0.1);
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
@@ -402,14 +440,17 @@ int main() {
 		ImGui::SliderFloat("Contrast", &contrast, -1.0f, 1.0f);
 		ImGui::SliderFloat("Hue", &hue, 0.0f, 360.0f);
 
-		if (ImGui::Button("Kernel Framebuffer")) {
+		if (ImGui::Button("Post processing toggle")) {
 			printf("I was clicked!\n");
 			framebuffer_is_active = !framebuffer_is_active;
 			printf("%d\n", framebuffer_is_active);
 		}
-		if (ImGui::Button("Grey Framebuffer")) {
-			framebuffer2_is_active = !framebuffer2_is_active;
+		if (ImGui::Button("Post processing effect selection")) {
+			printf("I was clicked!\n");
+			postProcessingEffect = 1 - postProcessingEffect;
+			printf("%d\n", postProcessingEffect);
 		}
+
 		ImGui::Text("Hello :)");
 		ImGui::End();
 
@@ -419,7 +460,7 @@ int main() {
 
 
 		checkMovement(window, cam);
-		view = glm::lookAt(cam.cameraPos, cam.cameraTarget, cam.up); // TODO (maybe): the camera stores its own matrix - not always looking at the same point
+		view = glm::lookAt(cam.cameraPos, cam.cameraPos + cam.cameraFront, glm::vec3(0,1,0)); // TODO (maybe): the camera stores its own matrix - not always looking at the same point
 		//projection = glm::perspective(glm::radians(45.0f), static_cast<float>(g_width) / static_cast<float>(g_height), 0.1f, 100.0f);
 		// Hint: look at model.cpp
 
@@ -520,32 +561,51 @@ int main() {
 				mMatrixUniform
 			);
 		}
+		// TODO: what if ..?
+		if (framebuffer_is_active) {
+			if (postProcessingEffect == 0) // wrong variable name!
+			{ // edge detection:
+				//printf("Using edge detection post processing\n");
+				glBindFramebuffer(GL_FRAMEBUFFER, 0); // render to screen
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		if (framebuffer_is_active)
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glUseProgram(framebufferShaderProgram);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, textureColourbuffer);
-			glUniform1i(ppTextureUniform, 0);
-			postprocessingQuad.render();
+
+				glUseProgram(framebufferShaderProgram);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, textureColourbuffer);
+				glUniform1i(ppTextureUniform, 0);
+				postprocessingQuad.render();
+
+
+			}
+			else if (postProcessingEffect == 1)// brightness, contrast, etc.: 
+			{
+				//printf("Using brightness etc. post processing\n");
+
+				glBindFramebuffer(GL_FRAMEBUFFER, 0);
+				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+
+
+				glUseProgram(framebufferShaderProgram2);
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, textureColourbuffer);
+
+
+				glUniform1i(ppTextureUniform2, 0);
+				glUniform1f(brightnessLocation, brightness);
+				glUniform1f(contrastLocation, contrast);
+				glUniform1f(hueLocation, hue);
+				postprocessingQuad.render();
+
+
+			}
+		} else { // no frame buffer active
+			// :-)
 		}
-		else if(framebuffer2_is_active)
-		{
-			glBindFramebuffer(GL_FRAMEBUFFER, 0);
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-			glUseProgram(framebufferShaderProgram2);
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, textureColourbuffer2);
-			glUniform1i(ppTextureUniform2, 0);
-			glUniform1f(brightnessLocation, brightness);
-			glUniform1f(contrastLocation, contrast);
-			glUniform1f(hueLocation, hue);
-			postprocessingQuad2.render();
-		}
+		//glEnable(GL_DEPTH_TEST);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
