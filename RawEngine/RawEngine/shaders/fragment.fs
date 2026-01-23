@@ -29,30 +29,70 @@ void main()
     // TODO: light calculations with dot product
     
     // max(diffuseTerm, 0) * objectColour * lightColour 
-    vec4 textColor = texture (uvGridText, uv);
+    //vec4 textColor = texture (uvGridText, uv);
 
-    vec4 diffuseLight = max(dot(lightDirection, fNor),0) * lightColor; //vec4(1,1,1,1);
-    //diffuseLight.a = 1.0;
+    vec3 norm = normalize(fNor);
+    vec3 lightDir = normalize(lightPos - fPos);
+    vec3 viewDir = normalize(camPos - fPos);
 
+    // ----- Diffuse -----
+    float diff = max(dot(norm, lightDir), 0.0);
+    vec4 diffuse = diff * lightColor;
+
+    // ----- Specular -----
+    vec3 reflectDir = reflect(-lightDir, norm);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+    vec4 specular = spec * specularColor;
+
+    // ----- Attenuation -----
+    float distance = length(lightPos - fPos);
+    float constant = 1.0;
+    float linear = 0.09;
+    float quadratic = 0.032;
+
+    float attenuation = 1.0 / (constant + linear * distance +
+                               quadratic * distance * distance);
+
+    // Apply attenuation
+    diffuse *= attenuation;
+    specular *= attenuation;
+
+    // ----- Ambient (NOT attenuated) -----
     vec4 ambient = ambientIntensity * ambientLightColor;
-    vec3 l = normalize(lightPos - fPos);
-    vec3 reflectedLight = reflect(l, fNor);
-    vec3 distance = normalize(fPos - camPos);
 
-    float s = max(dot(reflectedLight, distance), 0);
-    vec4 specular = pow(s, shininess) * specularColor * vec4 (0.1f, 0.1f, 1, 1);
-    //specular.a = 1.0;
-    //vec3 constDist = (0.234 + 0.153 * distance + 0.747 * distance * distance);
-    //float attenuation = diffuseLight/(0.234 + 0.153 * distance + 0.747 * distance * distance);
+    // ----- Final color -----
+    vec4 textColor = texture(uvGridText, uv);
+    vec4 result = ambient + diffuse + specular;
+    result.rgb *= (textColor.rgb + tint);
 
-    FragColor = (diffuseLight + ambient + specular) + vec4(textColor.rgb + tint, 1.0);
-    FragColor.a=1;
-    //FragColor = specular;
-    //FragColor = vec4(pow(s, shininess), pow(s, shininess), pow(s, shininess), 1);
-    //FragColor = vec4(reflectedLight, 1.0);
-   //FragColor = vec4(fNor.x, fNor.y, fNor.z, 1);
+    FragColor = vec4(result.rgb, 1.0);
 
-   //vec4 result = ambientTerm + (diffuseTerm + specularTerm) * attenuation;
-   //result.a = 1.0;
-   //FragColour = result;
+
+
+
+
+   // vec4 diffuseLight = max(dot(lightDirection, fNor),0) * lightColor; //vec4(1,1,1,1);
+   // //diffuseLight.a = 1.0;
+
+   // vec4 ambient = ambientIntensity * ambientLightColor;
+   // vec3 l = normalize(lightPos - fPos);
+   // vec3 reflectedLight = reflect(l, fNor);
+   // vec3 distance = normalize(fPos - camPos);
+
+   // float s = max(dot(reflectedLight, distance), 0);
+   // vec4 specular = pow(s, shininess) * specularColor * vec4 (0.1f, 0.1f, 1, 1);
+   // //specular.a = 1.0;
+   // //vec3 constDist = (0.234 + 0.153 * distance + 0.747 * distance * distance);
+   // //float attenuation = diffuseLight/(0.234 + 0.153 * distance + 0.747 * distance * distance);
+
+   // FragColor = (diffuseLight + ambient + specular) + vec4(textColor.rgb + tint, 1.0);
+   // FragColor.a=1;
+   // //FragColor = specular;
+   // //FragColor = vec4(pow(s, shininess), pow(s, shininess), pow(s, shininess), 1);
+   // //FragColor = vec4(reflectedLight, 1.0);
+   ////FragColor = vec4(fNor.x, fNor.y, fNor.z, 1);
+
+   ////vec4 result = ambientTerm + (diffuseTerm + specularTerm) * attenuation;
+   ////result.a = 1.0;
+   ////FragColour = result;
 }
