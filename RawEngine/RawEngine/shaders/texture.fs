@@ -3,8 +3,6 @@ out vec4 FragColor;
 in vec3 fNor;
 in vec2 uv;
 uniform sampler2D text;
-//uniform sampler2D text1;
-//uniform sampler2D text2;
 
 void main()
 {

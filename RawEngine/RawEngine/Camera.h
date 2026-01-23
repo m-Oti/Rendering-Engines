@@ -15,13 +15,8 @@ private:
     float yRotation = 0.0f;
 
 public:
-    // fixed:
     vec3 cameraInitialPos;
-    // updated when moving/rotating:
-    vec3 cameraPos; // important
-    vec3 cameraTarget; // important - or not? NOT ANYMORE REMOVE
-    
-    // used for moving?:
+    vec3 cameraPos;
     vec3 up;
     vec3 cameraFront;
     vec3 cameraRight;
@@ -29,8 +24,6 @@ public:
 
 
     Camera();
-    // TODO:
-    // getPosition()
     void calculateVectors();
     void moveRight(float howMuch);
     void moveUp(float howMuch);
@@ -41,7 +34,5 @@ public:
     void moveForward(float howMuch);
     glm::vec3 getForward();
     glm::vec3 getRight(); 
-    //glm::vec3 getUp();
-    //glm::vec3 calculateDirections(glm::vec3 front, glm::vec3 up, glm::vec3 right);
 };
 

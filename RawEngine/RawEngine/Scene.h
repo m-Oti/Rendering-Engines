@@ -14,8 +14,7 @@ class Scene {
 public:
     std::vector <core::Model*> objs;
     string name;
-    Scene(string _name);// :name(_name) {};
-    //Camera Cam;
+    Scene(string _name);
     void AddObj(core::Model* model);
     void renderScene(GLuint shader,
         const glm::mat4& view,
