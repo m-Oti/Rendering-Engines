@@ -21,8 +21,8 @@ Camera::Camera()
 void Camera::calculateVectors() {
     //cameraFront = glm::normalize(cameraPos - cameraTarget);
     cameraUp = glm::vec3(0, 1, 0);
-    cameraRight = glm::normalize(glm::cross(cameraUp, cameraFront));
-    cameraUp = glm::normalize(glm::cross(cameraFront, cameraRight));
+    cameraRight = -glm::normalize(glm::cross(cameraUp, cameraFront));
+    cameraUp = -glm::normalize(glm::cross(cameraFront, cameraRight));
 }
 
 vec3 Camera::getPosition()
@@ -104,8 +104,8 @@ void Camera::rotate(glm::vec3 axis, float radians)
 
 void Camera::moveForward(float howMuch) {
     calculateVectors();
-    cameraPos += cameraFront * howMuch;
-    cameraTarget += cameraFront * howMuch;
+    cameraPos -= cameraFront * howMuch;
+    cameraTarget -= cameraFront * howMuch;
 }
 
 void Camera::moveRight(float howMuch) {
