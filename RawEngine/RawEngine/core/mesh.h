@@ -16,7 +16,9 @@ namespace core {
     public:
         Mesh(std::vector<Vertex> vertices, std::vector<GLuint> indices);
         void render();
+        void generateUnitCube();
         static Mesh generateQuad();
+        const std::vector<Vertex>& getVertices() const { return vertices; }
     private:
         void setupBuffers();
     };

@@ -61,6 +61,37 @@ namespace core {
 
         return Mesh(vertexVector, indices);
     }
+    // Returns a unit cube (used as bounding box proxy)
+    core::Mesh generateUnitCube() {
+        std::vector<Vertex> verts;
+        verts.reserve(8);
+
+        auto makeVert = [](float x, float y, float z) {
+            Vertex v;
+            v.position = glm::vec3(x, y, z);
+            return v;
+            };
+
+        verts.push_back(makeVert(-0.5f, -0.5f, -0.5f));
+        verts.push_back(makeVert(0.5f, -0.5f, -0.5f));
+        verts.push_back(makeVert(0.5f, 0.5f, -0.5f));
+        verts.push_back(makeVert(-0.5f, 0.5f, -0.5f));
+        verts.push_back(makeVert(-0.5f, -0.5f, 0.5f));
+        verts.push_back(makeVert(0.5f, -0.5f, 0.5f));
+        verts.push_back(makeVert(0.5f, 0.5f, 0.5f));
+        verts.push_back(makeVert(-0.5f, 0.5f, 0.5f));
+
+        std::vector<GLuint> indices = {
+            0,1,2, 2,3,0,
+            4,5,6, 6,7,4,
+            0,4,7, 7,3,0,
+            1,5,6, 6,2,1,
+            3,2,6, 6,7,3,
+            0,1,5, 5,4,0
+        };
+
+        return Mesh(verts, indices);
+    }
 
     void Mesh::render() {
         glBindVertexArray(VAO);

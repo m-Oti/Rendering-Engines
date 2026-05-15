@@ -132,8 +132,10 @@
     <ClCompile Include="core\mesh.cpp" />
     <ClCompile Include="core\model.cpp" />
     <ClCompile Include="core\texture.cpp" />
+    <ClCompile Include="FrustumCulling.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Material.cpp" />
+    <ClCompile Include="OcclusionCulling.cpp" />
     <ClCompile Include="RawEngine.cpp" />
     <ClCompile Include="Scene1.cpp" />
     <ClCompile Include="SceneMainMenu.cpp" />
@@ -148,8 +150,10 @@
     <ClInclude Include="core\model.h" />
     <ClInclude Include="core\texture.h" />
     <ClInclude Include="core\vertex.h" />
+    <ClInclude Include="FrustumCulling.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="Material.h" />
+    <ClInclude Include="OcclusionCulling.h" />
     <ClInclude Include="Scene.h" />
     <ClInclude Include="SceneManager.h" />
     <ClInclude Include="Student.h" />

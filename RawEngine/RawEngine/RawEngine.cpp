@@ -10,6 +10,7 @@
 #include "core/texture.h"
 #include "Camera.h"
 #include "Scene.h"
+#include "FrustumCulling.h"
 #include "SceneManager.h"
 
 //#define MAC_CLION
@@ -101,6 +102,10 @@ GLuint generateShader(const std::string& shaderPath, GLuint shaderType) {
 	return shader;
 }
 
+
+
+
+
 int main() {
 	glfwInit();
 	glfwWindowHint(GLFW_SAMPLES, 4);
@@ -151,6 +156,9 @@ int main() {
 	const GLuint framebufferVertexShader = generateShader("shaders/framebuffer.vs", GL_VERTEX_SHADER);
 	const GLuint framebufferVertexShader2 = generateShader("shaders/framebuffer2.vs", GL_VERTEX_SHADER);
 	const GLuint framebufferShader2 = generateShader("shaders/framebuffer2.fs", GL_FRAGMENT_SHADER);
+	const GLuint bboxVertexShader = generateShader("shaders/bbox.vs", GL_VERTEX_SHADER);
+	const GLuint bboxFragmentShader = generateShader("shaders/bbox.fs", GL_FRAGMENT_SHADER);
+
 
 	int success;
 	Camera cam;
@@ -200,11 +208,23 @@ int main() {
 		printf("Error! Making Shader Program: %s\n", infoLog);
 	}
 
+	const unsigned int bboxShaderProgram = glCreateProgram();
+	glAttachShader(bboxShaderProgram, bboxVertexShader);
+	glAttachShader(bboxShaderProgram, bboxFragmentShader);
+	glLinkProgram(bboxShaderProgram);
+	glGetProgramiv(bboxShaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(bboxShaderProgram, 512, NULL, infoLog);
+		printf("Error! Making bbox Shader Program: %s\n", infoLog);
+	}
+
 	glDeleteShader(modelVertexShader);
 	glDeleteShader(fragmentShader);
 	glDeleteShader(textureShader);
 	glDeleteShader(framebufferShader);
 	glDeleteShader(framebufferShader2);
+	glDeleteShader(bboxVertexShader);
+	glDeleteShader(bboxFragmentShader);
 
 	//FRAMEBUFFERS
 
@@ -261,19 +281,36 @@ int main() {
 	Material suzanne_mat(modelShaderProgram, glm::vec3(1.0, 0.0, 0.0), 40);
 	suzanne.SetMaterial(suzanne_mat);
 	suzanne.material.SetTexture(furTexture);
+	suzanne.computeBBox();
+
+	core::Model monkey = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+	Material monkey_mat(modelShaderProgram, glm::vec3(0.4, 0.0, 0.3), 40);
+	monkey.SetMaterial(monkey_mat);
+	monkey.material.SetTexture(leatherTexture);
+	monkey.computeBBox();
+
+	core::Model monkey2 = core::AssimpLoader::loadModel("models/nonormalmonkey.obj");
+	Material monkey2_mat(modelShaderProgram, glm::vec3(0.1, 0.6, 0.3), 40);
+	monkey2.SetMaterial(monkey2_mat);
+	monkey2.material.SetTexture(woodTexture);
+	monkey2.computeBBox();
 
 	core::Model couch = core::AssimpLoader::loadModel("models/Couch_Small1.fbx");
 	Material couch_mat(modelShaderProgram, glm::vec3(0.0, 1.0, 0.0), 20);
 	couch.SetMaterial(couch_mat);
 	couch.material.SetTexture(leatherTexture);
+	couch.computeBBox();
 
 	core::Model table = core::AssimpLoader::loadModel("models/model.obj");
 	Material table_mat(modelShaderProgram, glm::vec3(0.0, 0.0, 1.0), 80);
 	table.SetMaterial(table_mat);
 	table.material.SetTexture(woodTexture);
+	table.computeBBox();
 
 	couch.rotate(vec3(1, 0, 0), 225);
 	couch.translate(vec3(-2, 0, 0));
+	monkey.translate(vec3(-12, 0, 0));
+	monkey2.translate(vec3(-6, 0, 0));
 	table.translate(vec3(2, 0, 0));
 
 	glm::vec4 clearColor = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
@@ -302,10 +339,13 @@ int main() {
 	GLint specularColor = glGetUniformLocation(modelShaderProgram, "specularColor");
 	GLint shininess = glGetUniformLocation(modelShaderProgram, "shininess");
 	GLint adsUvGridTexUniform = glGetUniformLocation(modelShaderProgram, "uvGridText");
+	GLint bboxMvpUniform = glGetUniformLocation(bboxShaderProgram, "mvpMatrix");
 
 	scene_1.AddObj(&couch);
 	scene_1.AddObj(&table);
 	scene_2.AddObj(&suzanne);
+	scene_2.AddObj(&monkey);
+	scene_2.AddObj(&monkey2);
 
 	double currentTime = glfwGetTime();
 	double finishFrameTime = 0.0;
@@ -334,20 +374,22 @@ int main() {
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		}
 
+		Frustum frustum = createFrustumFromCamera(cam, 15, 90, 15, 50);
+
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
 		ImGui::Begin("Raw Engine v2");
-		ImGui::SliderFloat("Brightness", &brightness, -1.0f, 1.0f);
-		ImGui::SliderFloat("Contrast", &contrast, -1.0f, 1.0f);
+		ImGui::SliderFloat("Brightness", &brightness, -0.8f, 0.8f);
+		ImGui::SliderFloat("Contrast", &contrast, 0.2f, 2.0f);
 		ImGui::SliderFloat("Hue", &hue, 0.0f, 360.0f);
 
-		if (ImGui::Button("Post processing toggle")) {
+		if (ImGui::Button("Activate post processing")) {
 			printf("I was clicked!\n");
 			framebuffer_is_active = !framebuffer_is_active;
 			printf("%d\n", framebuffer_is_active);
 		}
-		if (ImGui::Button("Post processing effect selection")) {
+		if (ImGui::Button("Change post processing effect")) {
 			printf("I was clicked!\n");
 			postProcessingEffect = 1 - postProcessingEffect;
 			printf("%d\n", postProcessingEffect);
@@ -411,12 +453,21 @@ int main() {
 			glBindTexture(GL_TEXTURE_2D, couch.material.texture->getId());
 			glUniform1i(adsUvGridTexUniform, 1);
 
+			// --- Start of frame: collect previous frame's results ---
+			scene_1.collectQueryResults();
+			scene_2.collectQueryResults();
+
+			// --- Occlusion query pass (before real rendering) ---
+			scene_1.renderOcclusionPass(bboxShaderProgram, bboxMvpUniform, view, projection);
+
+
 			scene_1.renderScene(
 				modelShaderProgram,
 				view,
 				projection,
 				mvpMatrixUniform,
-				mMatrixUniform
+				mMatrixUniform,
+				frustum
 			);
 		}
 		else
@@ -431,7 +482,8 @@ int main() {
 				view,
 				projection,
 				mvpMatrixUniform,
-				mMatrixUniform
+				mMatrixUniform,
+				frustum
 			);
 		}
 		if (framebuffer_is_active) {
@@ -478,6 +530,7 @@ int main() {
 	}
 
 	glDeleteProgram(modelShaderProgram);
+	glDeleteProgram(bboxShaderProgram);
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();

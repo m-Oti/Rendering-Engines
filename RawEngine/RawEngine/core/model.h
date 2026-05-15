@@ -20,6 +20,18 @@ namespace core {
         Model(std::vector<core::Mesh> meshes) : meshes(meshes), modelMatrix(1), material(-1,glm::vec3(0.0),1) {}
         Model(const core::Model& other); // copy constructor
 
+        // Add these member variables
+        glm::vec3 bboxMin = glm::vec3(FLT_MAX);
+        glm::vec3 bboxMax = glm::vec3(-FLT_MAX);
+        GLuint bboxVAO = 0;
+        GLuint bboxVBO = 0;
+        GLuint bboxEBO = 0;
+
+        // Add these methods
+        void computeBBox();
+        glm::mat4 getBBoxModelMatrix() const;
+        void renderBBox();
+
         void render();
         Material GetMaterial() const;
         void SetMaterial(Material material);
@@ -27,5 +39,6 @@ namespace core {
         void rotate(glm::vec3 axis, float radians);
         void scale(glm::vec3 scale);
         glm::mat4 getModelMatrix() const;
+        glm::vec3 getGlobalScale() const;
     };
 }

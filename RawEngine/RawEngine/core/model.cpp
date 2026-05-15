@@ -43,4 +43,37 @@ namespace core {
     glm::mat4 Model::getModelMatrix() const {
         return this->modelMatrix;
     }
+
+    glm::vec3 Model::getGlobalScale() const
+    {
+        glm::mat4 m = getModelMatrix();
+
+        return glm::vec3(
+            glm::length(glm::vec3(m[0])),
+            glm::length(glm::vec3(m[1])),
+            glm::length(glm::vec3(m[2]))
+        );
+    }
+
+    void Model::computeBBox() {
+        for (const auto& mesh : meshes) {
+            for (const auto& v : mesh.getVertices()) {  // was mesh.vertices
+                bboxMin = glm::min(bboxMin, v.position);
+                bboxMax = glm::max(bboxMax, v.position);
+            }
+        }
+    }
+
+    glm::mat4 Model::getBBoxModelMatrix() const {
+        // The bbox verts are already in local space, so just apply the model matrix as-is
+        // The box was built from the actual vertex extents, no extra scaling needed
+        return modelMatrix;
+    }
+
+    void Model::renderBBox() {
+        if (bboxVAO == 0) return; // computeBBox() was never called, skip
+        glBindVertexArray(bboxVAO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+        glBindVertexArray(0);
+    }
 }
